@@ -1,140 +1,184 @@
 <div class="page-container">
-  <header class="page-header">
-    <button class="btn-back" routerLink="/leagues">← Back</button>
-    @if (league) {
-      <div class="league-info">
-        <h1>{{ league.name }}</h1>
-        <span class="invite-code">Code: {{ league.invite_code }}</span>
-      </div>
-    }
-  </header>
-
   @if (loading) {
-    <div class="loading">Loading...</div>
+    <div class="loading">
+      <p>Loading league...</p>
+    </div>
   }
 
-  @if (!loading) {
+  @if (errorMessage) {
+    <div class="alert alert-error">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (!loading && league) {
+    <!-- League Header -->
+    <header class="league-header">
+      <button class="btn-back" routerLink="/leagues">← Back</button>
+      <div class="league-info">
+        <h1>{{ league.name }}</h1>
+        @if (league.description) {
+          <p class="league-description">{{ league.description }}</p>
+        }
+        <div class="league-meta">
+          <span class="meta-item">{{ members.length }} / {{ league.max_participants }} members</span>
+          <span class="meta-item">Code: {{ league.invite_code }}</span>
+          <button class="btn-small" (click)="shareInviteCode()">📋 Copy</button>
+        </div>
+      </div>
+      @if (isOwner) {
+        <button class="btn btn-admin" (click)="navigateToAdmin()">⚙️ Admin</button>
+      }
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tabs">
+      <button
+        class="tab"
+        [class.active]="activeTab === 'scoreboard'"
+        (click)="setActiveTab('scoreboard')"
+      >
+        🏆 Scoreboard
+      </button>
+      <button
+        class="tab"
+        [class.active]="activeTab === 'future-matches'"
+        (click)="setActiveTab('future-matches')"
+      >
+        📅 Future Matches
+      </button>
+      <button
+        class="tab"
+        [class.active]="activeTab === 'previous-matches'"
+        (click)="setActiveTab('previous-matches')"
+      >
+        📊 Previous Matches
+      </button>
+    </nav>
+
+    <!-- Tab Content -->
     <div class="tab-content">
-      @if (activeTab === 'matches') {
-        <div class="matches-section">
-          <h2>Upcoming Matches</h2>
-          @if (getUpcomingMatches().length === 0) {
-            <p class="empty-message">No upcoming matches</p>
-          } @else {
-            <div class="matches-list">
-              @for (match of getUpcomingMatches(); track match.id) {
-                <div class="match-card" (click)="navigateToMatch(match.id)">
-                  <div class="match-time">
-                    {{ match.kickoff_time | date: 'short' }}
-                  </div>
-                  <div class="match-teams">
-                    <span class="team">{{ match.home_team }}</span>
-                    <span class="vs">vs</span>
-                    <span class="team">{{ match.away_team }}</span>
-                  </div>
-                  <div class="match-status">
-                    <span class="badge badge-upcoming">Predict now</span>
-                  </div>
-                </div>
-              }
+
+      <!-- SCOREBOARD TAB -->
+      @if (activeTab === 'scoreboard') {
+        <div class="scoreboard-tab">
+          <h2>Leaderboard</h2>
+
+          @if (leaderboard.length === 0) {
+            <div class="empty-state">
+              <p>No scores yet. Make predictions to start earning points!</p>
             </div>
           }
 
-          <h2>Finished Matches</h2>
-          @if (getFinishedMatches().length === 0) {
-            <p class="empty-message">No finished matches yet</p>
-          } @else {
-            <div class="matches-list">
-              @for (match of getFinishedMatches(); track match.id) {
-                <div class="match-card" (click)="navigateToMatch(match.id)">
-                  <div class="match-time">
-                    {{ match.kickoff_time | date: 'short' }}
-                  </div>
-                  <div class="match-teams">
-                    <span class="team">{{ match.home_team }}</span>
-                    <span class="score">{{ match.actual_home_score }} - {{ match.actual_away_score }}</span>
-                    <span class="team">{{ match.away_team }}</span>
-                  </div>
-                  <div class="match-status">
-                    <span class="badge badge-finished">Finished</span>
-                  </div>
-                </div>
-              }
-            </div>
-          }
-        </div>
-      }
-
-      @if (activeTab === 'leaderboard') {
-        <div class="leaderboard-section">
-          <button class="btn btn-primary" (click)="navigateToLeaderboard()">
-            View Full Leaderboard
-          </button>
-        </div>
-      }
-
-      @if (activeTab === 'members') {
-        <div class="members-section">
-          <h2>Members ({{ members.length }})</h2>
-          <div class="members-list">
-            @for (member of members; track member.id) {
-              <div class="member-card">
-                <div class="member-name">
-                  {{ member.profile?.display_name || 'Anonymous' }}
-                </div>
-                <div class="member-role">
-                  @if (member.role === 'owner') {
-                    <span class="badge badge-owner">Owner</span>
-                  } @else {
-                    <span class="badge badge-member">Member</span>
-                  }
-                </div>
+          @if (leaderboard.length > 0) {
+            <div class="leaderboard-table">
+              <div class="leaderboard-header">
+                <span class="col-rank">Rank</span>
+                <span class="col-player">Player</span>
+                <span class="col-points">Points</span>
               </div>
-            }
-          </div>
+
+              @for (entry of leaderboard; track entry.user_id) {
+                <div class="leaderboard-row" [class.highlight]="entry.is_current_user">
+                  <span class="col-rank">
+                    @if (entry.rank === 1) { 🥇 }
+                    @else if (entry.rank === 2) { 🥈 }
+                    @else if (entry.rank === 3) { 🥉 }
+                    @else { #{{ entry.rank }} }
+                  </span>
+                  <span class="col-player">
+                    {{ entry.display_name || 'Anonymous' }}
+                    @if (entry.is_current_user) { <span class="badge-you">You</span> }
+                  </span>
+                  <span class="col-points">{{ entry.total_points }}</span>
+                </div>
+              }
+            </div>
+          }
         </div>
       }
 
-      @if (activeTab === 'admin' && isOwner) {
-        <div class="admin-section">
-          <button class="btn btn-primary" (click)="navigateToAdmin()">
-            Manage Matches
-          </button>
+      <!-- FUTURE MATCHES TAB -->
+      @if (activeTab === 'future-matches') {
+        <div class="future-matches-tab">
+          <h2>Upcoming Matches</h2>
+          <p class="tab-description">Make your predictions before kickoff!</p>
+
+          @if (getFutureMatches().length === 0) {
+            <div class="empty-state">
+              <p>No upcoming matches scheduled yet.</p>
+              @if (isOwner) {
+                <p>As the league owner, you can add matches in the Admin panel.</p>
+                <button class="btn btn-primary" (click)="navigateToAdmin()">Go to Admin</button>
+              }
+            </div>
+          }
+
+          @if (getFutureMatches().length > 0) {
+            <div class="matches-list">
+              @for (match of getFutureMatches(); track match.id) {
+                <div class="match-card" (click)="navigateToMatchPrediction(match.id)">
+                  <div class="match-teams">
+                    <span class="team home">{{ match.home_team }}</span>
+                    <span class="vs">vs</span>
+                    <span class="team away">{{ match.away_team }}</span>
+                  </div>
+                  <div class="match-info">
+                    <span class="kickoff">⏰ {{ formatDate(match.kickoff_time) }}</span>
+                    <span class="status-badge upcoming">Upcoming</span>
+                  </div>
+                  <div class="match-action">
+                    <button class="btn btn-small btn-predict">Make Prediction →</button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- PREVIOUS MATCHES TAB -->
+      @if (activeTab === 'previous-matches') {
+        <div class="previous-matches-tab">
+          <h2>Previous Matches</h2>
+          <p class="tab-description">View results and all predictions</p>
+
+          @if (getPreviousMatches().length === 0) {
+            <div class="empty-state">
+              <p>No matches have started yet.</p>
+            </div>
+          }
+
+          @if (getPreviousMatches().length > 0) {
+            <div class="matches-list">
+              @for (match of getPreviousMatches(); track match.id) {
+                <div class="match-card" (click)="navigateToMatchDetail(match.id)">
+                  <div class="match-teams">
+                    <span class="team home">{{ match.home_team }}</span>
+                    <span class="score">
+                      @if (match.status === 'finished' && match.actual_home_score !== null) {
+                        {{ match.actual_home_score }} - {{ match.actual_away_score }}
+                      } @else {
+                        vs
+                      }
+                    </span>
+                    <span class="team away">{{ match.away_team }}</span>
+                  </div>
+                  <div class="match-info">
+                    <span class="kickoff">{{ formatDate(match.kickoff_time) }}</span>
+                    <span class="status-badge" [class.finished]="match.status === 'finished'" [class.live]="match.status === 'live'">
+                      {{ match.status === 'finished' ? 'Final' : match.status === 'live' ? 'Live' : 'Started' }}
+                    </span>
+                  </div>
+                  <div class="match-action">
+                    <button class="btn btn-small btn-secondary">View Details →</button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
         </div>
       }
     </div>
-
-    <nav class="bottom-nav">
-      <button
-        class="nav-item"
-        [class.active]="activeTab === 'matches'"
-        (click)="setActiveTab('matches')"
-      >
-        Matches
-      </button>
-      <button
-        class="nav-item"
-        [class.active]="activeTab === 'leaderboard'"
-        (click)="setActiveTab('leaderboard')"
-      >
-        Leaderboard
-      </button>
-      <button
-        class="nav-item"
-        [class.active]="activeTab === 'members'"
-        (click)="setActiveTab('members')"
-      >
-        Members
-      </button>
-      @if (isOwner) {
-        <button
-          class="nav-item"
-          [class.active]="activeTab === 'admin'"
-          (click)="setActiveTab('admin')"
-        >
-          Admin
-        </button>
-      }
-    </nav>
   }
 </div>
