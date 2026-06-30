@@ -1,140 +1,77 @@
 <div class="page-container">
   <header class="page-header">
-    <h1>⚽ World Cup 2026</h1>
-    <span class="user-name">{{ userName }}</span>
+    <h1>My Leagues</h1>
   </header>
 
-  <nav class="nav-tabs">
-    <button
-      [class.active]="currentTab === 'matches'"
-      (click)="currentTab = 'matches'"
-    >
-      Matches
+  <div class="action-buttons">
+    <button class="btn btn-primary" (click)="navigateToCreateLeague()">
+      + Create League
     </button>
-    <button
-      [class.active]="currentTab === 'leaderboard'"
-      (click)="currentTab = 'leaderboard'"
-    >
-      Leaderboard
+    <button class="btn btn-secondary" (click)="navigateToJoinLeague()">
+      Join League
     </button>
-  </nav>
+  </div>
 
-  @if (currentTab === 'matches') {
-    <div class="matches-list">
-      @for (match of matches; track match.id) {
-        <div class="match-card">
-          <div class="match-header">
-            <div class="teams">
-              <span class="team">{{ match.homeTeam }}</span>
-              <span class="vs">vs</span>
-              <span class="team">{{ match.awayTeam }}</span>
-            </div>
-            <div class="kickoff">{{ match.kickoff | date:'short' }}</div>
+  @if (loading) {
+    <div class="loading">
+      <p>Loading your leagues...</p>
+    </div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert alert-error">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (!loading && leagues.length === 0) {
+    <div class="empty-state">
+      <p>You haven't joined any leagues yet.</p>
+      <p>Create your first league or join one with an invite code!</p>
+    </div>
+  }
+
+  @if (!loading && leagues.length > 0) {
+    <div class="leagues-grid">
+      @for (league of leagues; track league.id) {
+        <div class="league-card" (click)="navigateToLeague(league.id)">
+          <div class="league-header">
+            <h2>{{ league.name }}</h2>
+            @if (league.description) {
+              <p class="league-description">{{ league.description }}</p>
+            }
           </div>
 
-          @if (match.status === 'finished') {
-            <div class="final-score">
-              <strong>Final: {{ match.actualHomeScore }} - {{ match.actualAwayScore }}</strong>
+          <div class="league-meta">
+            <div class="meta-item">
+              <span class="label">Competition:</span>
+              <span class="value">{{ league.competition_id || 'N/A' }}</span>
             </div>
-          }
-
-          @if (hasPrediction(match.id)) {
-            <div class="prediction-badge">
-              ✓ Predicted: {{ predictions[match.id].predictedHomeScore }} - {{ predictions[match.id].predictedAwayScore }}
-              ({{ predictions[match.id].predictedOutcome }})
+            <div class="meta-item">
+              <span class="label">Participants:</span>
+              <span class="value">{{ league.member_count || 0 }} / {{ league.max_participants }}</span>
             </div>
-          }
+          </div>
 
-          @if (!isKickoffPassed(match) || !hasPrediction(match.id)) {
-            <button class="btn-predict" (click)="openPredictionModal(match)">
-              {{ hasPrediction(match.id) ? 'Edit Prediction' : 'Make Prediction' }}
-            </button>
-          }
-
-          @if (isKickoffPassed(match)) {
-            <div class="all-predictions">
-              <h4>Everyone's Predictions:</h4>
-              <div class="predictions-list">
-                @for (userName of getAllUserNamesForMatch(match.id); track userName) {
-                  <div class="user-prediction">
-                    <span class="name">{{ userName }}:</span>
-                    <span class="pred">{{ getUserPrediction(userName, match.id) }}</span>
-                    @if (match.status === 'finished') {
-                      <span class="points">+{{ calculatePoints(userName, match) }} pts</span>
-                    }
-                  </div>
-                }
+          @if (league.user_rank) {
+            <div class="league-stats">
+              <div class="stat-badge rank">
+                <span class="stat-label">Your Rank</span>
+                <span class="stat-value">#{{ league.user_rank }}</span>
+              </div>
+              <div class="stat-badge points">
+                <span class="stat-label">Your Points</span>
+                <span class="stat-value">{{ league.user_points || 0 }}</span>
               </div>
             </div>
           }
+
+          <div class="league-footer">
+            <span class="invite-code">Code: {{ league.invite_code }}</span>
+            <span class="arrow">→</span>
+          </div>
         </div>
       }
     </div>
-  } @else {
-    <div class="leaderboard">
-      <h2>🏆 Leaderboard</h2>
-      <div class="leaderboard-list">
-        @for (entry of getLeaderboard(); track entry.userName; let i = $index) {
-          <div class="leaderboard-item" [class.highlight]="entry.userName === userName">
-            <span class="rank">{{ i + 1 }}</span>
-            <span class="player-name">{{ entry.userName }}</span>
-            <span class="score">{{ entry.points }} pts</span>
-          </div>
-        }
-      </div>
-    </div>
   }
 </div>
-
-<!-- Prediction Modal -->
-@if (selectedMatch) {
-  <div class="modal-overlay" (click)="closePredictionModal()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
-      <h2>Make Your Prediction</h2>
-      <h3>{{ selectedMatch.homeTeam }} vs {{ selectedMatch.awayTeam }}</h3>
-
-      <form (ngSubmit)="submitPrediction()">
-        <div class="score-prediction">
-          <label>Predicted Score:</label>
-          <div class="score-inputs">
-            <input type="number" [(ngModel)]="predictedHomeScore" name="homeScore" min="0" max="20" />
-            <span>-</span>
-            <input type="number" [(ngModel)]="predictedAwayScore" name="awayScore" min="0" max="20" />
-          </div>
-        </div>
-
-        <div class="outcome-prediction">
-          <label>Predicted Outcome:</label>
-          <div class="outcome-buttons">
-            <button
-              type="button"
-              [class.active]="predictedOutcome === '1'"
-              (click)="predictedOutcome = '1'"
-            >
-              1 ({{ selectedMatch.homeTeam }} wins)
-            </button>
-            <button
-              type="button"
-              [class.active]="predictedOutcome === 'X'"
-              (click)="predictedOutcome = 'X'"
-            >
-              X (Draw)
-            </button>
-            <button
-              type="button"
-              [class.active]="predictedOutcome === '2'"
-              (click)="predictedOutcome = '2'"
-            >
-              2 ({{ selectedMatch.awayTeam }} wins)
-            </button>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" (click)="closePredictionModal()">Cancel</button>
-          <button type="submit" class="btn-submit">Save Prediction</button>
-        </div>
-      </form>
-    </div>
-  </div>
-}
