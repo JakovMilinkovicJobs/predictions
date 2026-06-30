@@ -7,8 +7,13 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "db:push": "npx supabase db push",
+    "db:pull": "npx supabase db pull",
+    "db:link": "npx supabase link --project-ref jpvykalpweurxdgcvahi",
+    "db:migration:new": "npx supabase migration new",
+    "db:migration:list": "npx supabase migration list",
     "db:status": "echo 'Checking Supabase connection...' && node scripts/check-db.js",
-    "db:info": "echo 'Database Info: See README_DATABASE.md for management guide'"
+    "db:info": "echo 'Database Info: See SUPABASE_CLI_GUIDE.md for CLI usage'"
   },
   "private": true,
   "dependencies": {
