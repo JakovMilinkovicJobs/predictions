@@ -57,10 +57,21 @@ npm install
 
 ### 2. Set Up Supabase
 
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to SQL Editor in your Supabase dashboard
-3. Run the migration script located at: `supabase/migrations/001_initial_schema.sql`
-4. Copy your Supabase URL and anon key from Project Settings > API
+**Choose your approach:**
+
+**Option A: Quick Testing (Manual - 5 min)**
+1. Go to SQL Editor in your Supabase dashboard
+2. Run migrations: `supabase/migrations/001_initial_schema.sql`
+3. Run migrations: `supabase/migrations/002_add_competitions_and_scoring.sql`
+4. See `TESTING_GUIDE.md` for detailed steps
+
+**Option B: Production Ready (GitHub - 10 min)**
+1. Push code to GitHub
+2. Connect repo in Supabase Dashboard → Settings → Integrations
+3. Migrations auto-apply on git push! 🚀
+4. See `scripts/setup-github-integration.md` for setup
+
+**Recommended:** Start with Option A for testing, then switch to Option B for production
 5. **Enable Authentication Providers** (optional):
    - **Magic Link**: ✅ Enabled by default - NO setup needed!
    - **GitHub OAuth** (recommended - easiest OAuth option):

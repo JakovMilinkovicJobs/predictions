@@ -4,6 +4,10 @@
 
 **IMPORTANT: You must do this first before running the app!**
 
+### Option A: Manual via SQL Editor (Quick - 5 minutes)
+
+**Best for:** Immediate testing
+
 1. Go to your Supabase Dashboard: https://app.supabase.com/project/sajiznrabalnmldrnyyf
 
 2. Click **SQL Editor** in the left sidebar
@@ -19,6 +23,22 @@
 7. You should see "Success. No rows returned"
 
 8. Repeat steps 3-7 for `supabase/migrations/002_add_competitions_and_scoring.sql`
+
+### Option B: GitHub Integration (Recommended for production)
+
+**Best for:** Team collaboration and automatic deployments
+
+See `scripts/setup-github-integration.md` for detailed setup.
+
+**Quick version:**
+1. Push code to GitHub
+2. Connect GitHub repo in Supabase Dashboard → Settings → Integrations
+3. Migrations auto-apply on push! 🚀
+
+**Pros:** Version control, automatic, team-friendly
+**Cons:** 5 min setup time
+
+Choose **Option A** for immediate testing, then switch to **Option B** later for production workflow.
 
 ## ✅ Step 2: Verify Database Setup
 
