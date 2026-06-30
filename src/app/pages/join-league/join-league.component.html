@@ -1,0 +1,53 @@
+<div class="page-container">
+  <header class="page-header">
+    <button class="btn-back" routerLink="/leagues">← Back</button>
+    <h1>Join League</h1>
+  </header>
+
+  <div class="form-container">
+    <form [formGroup]="joinForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="invite_code">Invite Code</label>
+        <input
+          id="invite_code"
+          type="text"
+          formControlName="invite_code"
+          placeholder="Enter 8-character code"
+          maxlength="8"
+          (input)="onInputChange($event)"
+          [class.error]="inviteCode?.invalid && inviteCode?.touched"
+          class="invite-code-input"
+        />
+        @if (inviteCode?.invalid && inviteCode?.touched) {
+          <div class="error-message">
+            @if (inviteCode?.errors?.['required']) {
+              <span>Invite code is required</span>
+            }
+            @if (inviteCode?.errors?.['minlength'] || inviteCode?.errors?.['maxlength']) {
+              <span>Invite code must be exactly 8 characters</span>
+            }
+          </div>
+        }
+        <p class="help-text">Ask the league owner for the invite code</p>
+      </div>
+
+      @if (errorMessage) {
+        <div class="alert alert-error">
+          {{ errorMessage }}
+        </div>
+      }
+
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="loading || joinForm.invalid"
+      >
+        @if (loading) {
+          <span>Joining...</span>
+        } @else {
+          <span>Join League</span>
+        }
+      </button>
+    </form>
+  </div>
+</div>

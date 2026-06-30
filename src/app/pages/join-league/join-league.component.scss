@@ -1,0 +1,15 @@
+@import '../create-league/create-league.component.scss';
+
+.invite-code-input {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+  font-size: 1.25rem;
+  text-align: center;
+}
+
+.help-text {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #666;
+}

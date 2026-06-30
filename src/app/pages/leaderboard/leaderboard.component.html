@@ -1,0 +1,76 @@
+<div class="page-container">
+  <header class="page-header">
+    <button class="btn-back" [routerLink]="['/league', leagueId]">← Back</button>
+    <h1>Leaderboard</h1>
+  </header>
+
+  @if (loading) {
+    <div class="loading">Loading leaderboard...</div>
+  }
+
+  @if (!loading) {
+    @if (stats) {
+      <div class="stats-section">
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.total_participants }}</div>
+          <div class="stat-label">Participants</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.finished_matches }}</div>
+          <div class="stat-label">Finished</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.upcoming_matches }}</div>
+          <div class="stat-label">Upcoming</div>
+        </div>
+      </div>
+    }
+
+    @if (errorMessage) {
+      <div class="alert alert-error">{{ errorMessage }}</div>
+    }
+
+    @if (leaderboard.length === 0) {
+      <div class="empty-state">
+        <p>No predictions yet. Start predicting to see the leaderboard!</p>
+      </div>
+    } @else {
+      <div class="leaderboard-list">
+        @for (entry of leaderboard; track entry.user_id; let i = $index) {
+          <div class="leaderboard-item" [class.top-3]="i < 3">
+            <div class="rank">
+              @if (i === 0) {
+                <span class="medal gold">🥇</span>
+              } @else if (i === 1) {
+                <span class="medal silver">🥈</span>
+              } @else if (i === 2) {
+                <span class="medal bronze">🥉</span>
+              } @else {
+                <span class="rank-number">{{ i + 1 }}{{ getRankSuffix(i + 1) }}</span>
+              }
+            </div>
+
+            <div class="player-info">
+              <div class="player-name">
+                {{ entry.display_name || 'Anonymous' }}
+              </div>
+              <div class="player-stats">
+                <span class="stat-item">
+                  ⚽ {{ entry.exact_scores_count }} exact
+                </span>
+                <span class="stat-item">
+                  ✓ {{ entry.correct_outcomes_count }} outcomes
+                </span>
+              </div>
+            </div>
+
+            <div class="points">
+              <div class="points-value">{{ entry.total_points }}</div>
+              <div class="points-label">pts</div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

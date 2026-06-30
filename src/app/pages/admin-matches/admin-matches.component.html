@@ -1,0 +1,145 @@
+<div class="page-container">
+  <header class="page-header">
+    <button class="btn-back" [routerLink]="['/league', leagueId]">← Back</button>
+    <h1>Manage Matches</h1>
+  </header>
+
+  <div class="content">
+    @if (errorMessage) {
+      <div class="alert alert-error">{{ errorMessage }}</div>
+    }
+
+    @if (successMessage) {
+      <div class="alert alert-success">{{ successMessage }}</div>
+    }
+
+    @if (isOwner) {
+      <div class="actions">
+        <button class="btn btn-primary" (click)="toggleCreateForm()">
+          @if (showCreateForm) {
+            <span>Cancel</span>
+          } @else {
+            <span>+ Create Match</span>
+          }
+        </button>
+      </div>
+
+      @if (showCreateForm) {
+        <div class="form-card">
+          <h2>Create New Match</h2>
+          <form [formGroup]="createForm" (ngSubmit)="onCreateSubmit()">
+            <div class="form-group">
+              <label for="home_team">Home Team</label>
+              <input id="home_team" type="text" formControlName="home_team" placeholder="e.g., Argentina" />
+            </div>
+
+            <div class="form-group">
+              <label for="away_team">Away Team</label>
+              <input id="away_team" type="text" formControlName="away_team" placeholder="e.g., Brazil" />
+            </div>
+
+            <div class="form-group">
+              <label for="kickoff_time">Kickoff Time</label>
+              <input id="kickoff_time" type="datetime-local" formControlName="kickoff_time" />
+            </div>
+
+            <button type="submit" class="btn btn-primary" [disabled]="createForm.invalid">
+              Create Match
+            </button>
+          </form>
+        </div>
+      }
+
+      @if (showEditForm && editingMatch) {
+        <div class="form-card">
+          <h2>Edit Match</h2>
+          <form [formGroup]="editForm" (ngSubmit)="onEditSubmit()">
+            <div class="form-group">
+              <label for="edit_home_team">Home Team</label>
+              <input id="edit_home_team" type="text" formControlName="home_team" />
+            </div>
+
+            <div class="form-group">
+              <label for="edit_away_team">Away Team</label>
+              <input id="edit_away_team" type="text" formControlName="away_team" />
+            </div>
+
+            <div class="form-group">
+              <label for="edit_kickoff_time">Kickoff Time</label>
+              <input id="edit_kickoff_time" type="datetime-local" formControlName="kickoff_time" />
+            </div>
+
+            <div class="form-group">
+              <label for="edit_status">Status</label>
+              <select id="edit_status" formControlName="status">
+                <option value="scheduled">Scheduled</option>
+                <option value="live">Live</option>
+                <option value="finished">Finished</option>
+              </select>
+            </div>
+
+            @if (editForm.get('status')?.value === 'finished') {
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="edit_actual_home_score">Home Score</label>
+                  <input id="edit_actual_home_score" type="number" formControlName="actual_home_score" min="0" />
+                </div>
+
+                <div class="form-group">
+                  <label for="edit_actual_away_score">Away Score</label>
+                  <input id="edit_actual_away_score" type="number" formControlName="actual_away_score" min="0" />
+                </div>
+              </div>
+            }
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid">
+                Save Changes
+              </button>
+              <button type="button" class="btn btn-secondary" (click)="cancelEdit()">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+
+      @if (loading) {
+        <div class="loading">Loading matches...</div>
+      }
+
+      @if (!loading && matches.length === 0) {
+        <div class="empty-state">
+          <p>No matches yet. Create your first match!</p>
+        </div>
+      }
+
+      @if (!loading && matches.length > 0) {
+        <div class="matches-list">
+          <h2>All Matches</h2>
+          @for (match of matches; track match.id) {
+            <div class="match-card">
+              <div class="match-header">
+                <span class="match-time">{{ match.kickoff_time | date: 'short' }}</span>
+                <span class="badge" [class]="'badge-' + match.status">{{ match.status }}</span>
+              </div>
+              <div class="match-teams">
+                <span class="team">{{ match.home_team }}</span>
+                @if (match.status === 'finished' && match.actual_home_score !== null) {
+                  <span class="score">{{ match.actual_home_score }} - {{ match.actual_away_score }}</span>
+                } @else {
+                  <span class="vs">vs</span>
+                }
+                <span class="team">{{ match.away_team }}</span>
+              </div>
+              <div class="match-actions">
+                <button class="btn-icon" (click)="editMatch(match)" title="Edit">✏️</button>
+                <button class="btn-icon" (click)="deleteMatch(match)" title="Delete">🗑️</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

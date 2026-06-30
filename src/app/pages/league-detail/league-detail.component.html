@@ -1,0 +1,140 @@
+<div class="page-container">
+  <header class="page-header">
+    <button class="btn-back" routerLink="/leagues">← Back</button>
+    @if (league) {
+      <div class="league-info">
+        <h1>{{ league.name }}</h1>
+        <span class="invite-code">Code: {{ league.invite_code }}</span>
+      </div>
+    }
+  </header>
+
+  @if (loading) {
+    <div class="loading">Loading...</div>
+  }
+
+  @if (!loading) {
+    <div class="tab-content">
+      @if (activeTab === 'matches') {
+        <div class="matches-section">
+          <h2>Upcoming Matches</h2>
+          @if (getUpcomingMatches().length === 0) {
+            <p class="empty-message">No upcoming matches</p>
+          } @else {
+            <div class="matches-list">
+              @for (match of getUpcomingMatches(); track match.id) {
+                <div class="match-card" (click)="navigateToMatch(match.id)">
+                  <div class="match-time">
+                    {{ match.kickoff_time | date: 'short' }}
+                  </div>
+                  <div class="match-teams">
+                    <span class="team">{{ match.home_team }}</span>
+                    <span class="vs">vs</span>
+                    <span class="team">{{ match.away_team }}</span>
+                  </div>
+                  <div class="match-status">
+                    <span class="badge badge-upcoming">Predict now</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <h2>Finished Matches</h2>
+          @if (getFinishedMatches().length === 0) {
+            <p class="empty-message">No finished matches yet</p>
+          } @else {
+            <div class="matches-list">
+              @for (match of getFinishedMatches(); track match.id) {
+                <div class="match-card" (click)="navigateToMatch(match.id)">
+                  <div class="match-time">
+                    {{ match.kickoff_time | date: 'short' }}
+                  </div>
+                  <div class="match-teams">
+                    <span class="team">{{ match.home_team }}</span>
+                    <span class="score">{{ match.actual_home_score }} - {{ match.actual_away_score }}</span>
+                    <span class="team">{{ match.away_team }}</span>
+                  </div>
+                  <div class="match-status">
+                    <span class="badge badge-finished">Finished</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (activeTab === 'leaderboard') {
+        <div class="leaderboard-section">
+          <button class="btn btn-primary" (click)="navigateToLeaderboard()">
+            View Full Leaderboard
+          </button>
+        </div>
+      }
+
+      @if (activeTab === 'members') {
+        <div class="members-section">
+          <h2>Members ({{ members.length }})</h2>
+          <div class="members-list">
+            @for (member of members; track member.id) {
+              <div class="member-card">
+                <div class="member-name">
+                  {{ member.profile?.display_name || 'Anonymous' }}
+                </div>
+                <div class="member-role">
+                  @if (member.role === 'owner') {
+                    <span class="badge badge-owner">Owner</span>
+                  } @else {
+                    <span class="badge badge-member">Member</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (activeTab === 'admin' && isOwner) {
+        <div class="admin-section">
+          <button class="btn btn-primary" (click)="navigateToAdmin()">
+            Manage Matches
+          </button>
+        </div>
+      }
+    </div>
+
+    <nav class="bottom-nav">
+      <button
+        class="nav-item"
+        [class.active]="activeTab === 'matches'"
+        (click)="setActiveTab('matches')"
+      >
+        Matches
+      </button>
+      <button
+        class="nav-item"
+        [class.active]="activeTab === 'leaderboard'"
+        (click)="setActiveTab('leaderboard')"
+      >
+        Leaderboard
+      </button>
+      <button
+        class="nav-item"
+        [class.active]="activeTab === 'members'"
+        (click)="setActiveTab('members')"
+      >
+        Members
+      </button>
+      @if (isOwner) {
+        <button
+          class="nav-item"
+          [class.active]="activeTab === 'admin'"
+          (click)="setActiveTab('admin')"
+        >
+          Admin
+        </button>
+      }
+    </nav>
+  }
+</div>

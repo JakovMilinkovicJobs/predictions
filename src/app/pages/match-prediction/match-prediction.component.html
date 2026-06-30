@@ -1,0 +1,232 @@
+<div class="page-container">
+  <header class="page-header">
+    <button class="btn-back" [routerLink]="['/league', leagueId]">← Back</button>
+    <h1>Match Prediction</h1>
+  </header>
+
+  @if (loading) {
+    <div class="loading">Loading match...</div>
+  }
+
+  @if (!loading && match) {
+    <div class="content">
+      <div class="match-info">
+        <div class="match-time">
+          {{ match.kickoff_time | date: 'medium' }}
+        </div>
+        <div class="teams">
+          <div class="team">{{ match.home_team }}</div>
+          <div class="vs">vs</div>
+          <div class="team">{{ match.away_team }}</div>
+        </div>
+
+        @if (match.status === 'finished') {
+          <div class="actual-result">
+            <div class="result-label">Final Result</div>
+            <div class="result-score">
+              {{ match.actual_home_score }} - {{ match.actual_away_score }}
+            </div>
+            <div class="result-outcome">
+              Outcome:
+              @if (getActualOutcome() === '1') {
+                <span>{{ match.home_team }} wins</span>
+              } @else if (getActualOutcome() === 'X') {
+                <span>Draw</span>
+              } @else {
+                <span>{{ match.away_team }} wins</span>
+              }
+            </div>
+          </div>
+        }
+
+        @if (!canEdit && match.status !== 'finished') {
+          <div class="alert alert-warning">
+            Predictions are locked. Kickoff has passed.
+          </div>
+        }
+      </div>
+
+      @if (existingPrediction && match.status === 'finished' && earnedPoints !== null) {
+        <div class="points-earned">
+          <h3>You earned {{ earnedPoints }} points!</h3>
+          <div class="points-breakdown">
+            @if (isExactScoreCorrect()) {
+              <div class="points-item correct">✓ Exact score: +3 points</div>
+            } @else {
+              <div class="points-item incorrect">✗ Exact score: 0 points</div>
+            }
+            @if (isOutcomeCorrect()) {
+              <div class="points-item correct">✓ Correct outcome: +1 point</div>
+            } @else {
+              <div class="points-item incorrect">✗ Outcome: 0 points</div>
+            }
+          </div>
+        </div>
+      }
+
+      <form [formGroup]="predictionForm" (ngSubmit)="onSubmit()">
+        <div class="form-section">
+          <h2>Predict Score</h2>
+          <div class="score-inputs">
+            <div class="score-input">
+              <label>{{ match.home_team }}</label>
+              <input
+                type="number"
+                formControlName="predicted_home_score"
+                min="0"
+                [readonly]="!canEdit"
+              />
+            </div>
+            <div class="separator">-</div>
+            <div class="score-input">
+              <label>{{ match.away_team }}</label>
+              <input
+                type="number"
+                formControlName="predicted_away_score"
+                min="0"
+                [readonly]="!canEdit"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2>Predict Outcome</h2>
+          <p class="help-text">
+            This is independent from the score prediction above. You can predict any outcome.
+          </p>
+          <div class="outcome-buttons">
+            <button
+              type="button"
+              class="outcome-btn"
+              [class.selected]="isOutcomeSelected('1')"
+              (click)="selectOutcome('1')"
+              [disabled]="!canEdit"
+            >
+              <div class="outcome-label">1</div>
+              <div class="outcome-desc">{{ match.home_team }} wins</div>
+            </button>
+            <button
+              type="button"
+              class="outcome-btn"
+              [class.selected]="isOutcomeSelected('X')"
+              (click)="selectOutcome('X')"
+              [disabled]="!canEdit"
+            >
+              <div class="outcome-label">X</div>
+              <div class="outcome-desc">Draw</div>
+            </button>
+            <button
+              type="button"
+              class="outcome-btn"
+              [class.selected]="isOutcomeSelected('2')"
+              (click)="selectOutcome('2')"
+              [disabled]="!canEdit"
+            >
+              <div class="outcome-label">2</div>
+              <div class="outcome-desc">{{ match.away_team }} wins</div>
+            </button>
+          </div>
+        </div>
+
+        @if (errorMessage) {
+          <div class="alert alert-error">
+            {{ errorMessage }}
+          </div>
+        }
+
+        @if (successMessage) {
+          <div class="alert alert-success">
+            {{ successMessage }}
+          </div>
+        }
+
+        @if (canEdit) {
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="saving || predictionForm.invalid"
+          >
+            @if (saving) {
+              <span>Saving...</span>
+            } @else if (existingPrediction) {
+              <span>Update Prediction</span>
+            } @else {
+              <span>Save Prediction</span>
+            }
+          </button>
+        }
+      </form>
+
+      <!-- Show all predictions after kickoff -->
+      @if (kickoffPassed && allPredictions.length > 0) {
+        <div class="all-predictions-section">
+          <div class="section-header">
+            <h2>All Predictions</h2>
+            <button class="btn-toggle" (click)="toggleShowAllPredictions()">
+              @if (showAllPredictions) {
+                <span>Hide ▲</span>
+              } @else {
+                <span>Show ({{ allPredictions.length }}) ▼</span>
+              }
+            </button>
+          </div>
+
+          @if (showAllPredictions) {
+            <div class="predictions-list">
+              @for (pred of allPredictions; track pred.id) {
+                <div class="prediction-card" [class.current-user]="pred.isCurrentUser">
+                  <div class="prediction-header">
+                    <div class="user-name">
+                      {{ pred.display_name }}
+                      @if (pred.isCurrentUser) {
+                        <span class="you-badge">You</span>
+                      }
+                    </div>
+                    @if (match?.status === 'finished' && pred.points !== undefined) {
+                      <div class="prediction-points">
+                        {{ pred.points }} pts
+                      </div>
+                    }
+                  </div>
+
+                  <div class="prediction-content">
+                    <div class="prediction-row">
+                      <span class="label">Score:</span>
+                      <span class="value">
+                        {{ pred.predicted_home_score }} - {{ pred.predicted_away_score }}
+                        @if (match?.status === 'finished') {
+                          @if (pred.predicted_home_score === match.actual_home_score && pred.predicted_away_score === match.actual_away_score) {
+                            <span class="correct-badge">✓ +3</span>
+                          }
+                        }
+                      </span>
+                    </div>
+
+                    <div class="prediction-row">
+                      <span class="label">Outcome:</span>
+                      <span class="value">
+                        {{ getOutcomeLabel(pred.predicted_outcome) }}
+                        @if (match?.status === 'finished') {
+                          @if (pred.predicted_outcome === getActualOutcome()) {
+                            <span class="correct-badge">✓ +1</span>
+                          }
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (kickoffPassed && allPredictions.length === 0) {
+        <div class="all-predictions-section">
+          <p class="empty-message">No predictions submitted for this match yet.</p>
+        </div>
+      }
+    </div>
+  }
+</div>
